@@ -1,0 +1,124 @@
+﻿<Window x:Class = "BonsaiWorldSim.MainWindow"
+		xmlns = "http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+		xmlns:x = "http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:d = "http://schemas.microsoft.com/expression/blend/2008"
+		xmlns:mc = "http://schemas.openxmlformats.org/markup-compatibility/2006"
+		mc:Ignorable = "d"
+		Title = "Bonsai World Sim"
+		Height = "600"
+		Width = "800"
+		WindowStartupLocation = "CenterScreen"
+		Background = "#ff333333"
+		Foreground = "#ffdddddd">
+
+	<!-- main grid -->
+	<Grid>
+
+		<!-- main grid row/col defs -->
+		<Grid.ColumnDefinitions>
+			<ColumnDefinition Width = "200"
+							  MaxWidth = "300"
+							  MinWidth = "100" />
+			<ColumnDefinition Width = "5" />
+			<ColumnDefinition Width = "*"
+							  MinWidth = "100" />
+			<ColumnDefinition Width = "5" />
+			<ColumnDefinition Width = "200"
+							  MaxWidth = "300"
+							  MinWidth = "100" />
+		</Grid.ColumnDefinitions>
+
+		<!-- control panel -->
+		<ScrollViewer Grid.Column = "0"
+					  VerticalScrollBarVisibility = "Auto"
+					  >
+			<Grid Background = "#ff333333"
+				  ZIndex = "1">
+
+				<!-- control panel padding -->
+				<Grid.Resources>
+					<Style TargetType = "Border">
+						<Setter Property = "Padding"
+								Value = "5,5,5,5" />
+					</Style>
+				</Grid.Resources>
+
+				<!-- control panel row/col defs -->
+				<Grid.ColumnDefinitions>
+					<ColumnDefinition Width = "Auto" /> <ColumnDefinition Width = "*" />
+				</Grid.ColumnDefinitions>
+				<Grid.RowDefinitions>
+					<RowDefinition Height = "Auto" /> <RowDefinition Height = "Auto" /> <RowDefinition Height = "Auto" />
+					<RowDefinition Height = "Auto" />
+				</Grid.RowDefinitions>
+
+
+				<!-- seed -->
+				<Border Grid.Row = "0"
+						Grid.Column = "0">
+					<TextBlock HorizontalAlignment = "Right">Seed</TextBlock>
+				</Border>
+				<Border Grid.Row = "0"
+						Grid.Column = "1">
+					<TextBox VerticalAlignment = "Center" />
+				</Border>
+
+				<!-- expand -->
+				<Border Grid.Row = "1"
+						Grid.Column = "0">
+					<TextBlock HorizontalAlignment = "Right">Expand</TextBlock>
+				</Border>
+				<Border Grid.Row = "1"
+						Grid.Column = "1">
+					<Button Click="ButtonBase_OnClick">Expand</Button>
+				</Border>
+			</Grid>
+		</ScrollViewer>
+
+		<!-- control panel splitter -->
+		<GridSplitter Grid.Column = "1"
+					  Width = "5"
+					  HorizontalAlignment = "Stretch" />
+
+		<!-- map panel -->
+		<Grid Grid.Column = "2"
+			  Background = "#ff222222"
+			  ZIndex = "-1">
+
+			<!-- map panel row/col defs -->
+			<Grid.RowDefinitions>
+				<RowDefinition Height = "*" /> <RowDefinition Height = "Auto" />
+			</Grid.RowDefinitions>
+
+			<!-- map panel canvas -->
+			<Canvas Name = "Canvas"
+					Grid.Row = "0">
+				<Canvas.RenderTransform>
+					<MatrixTransform x:Name = "Mt" />
+				</Canvas.RenderTransform>
+			</Canvas>
+
+			<!-- map panel scrubber -->
+			<Slider Grid.Row = "1"
+					Maximum = "100"
+					Margin = "5,5,5,5" />
+		</Grid>
+
+		<!-- report panel splitter -->
+		<GridSplitter Grid.Column = "3"
+					  Width = "5"
+					  HorizontalAlignment = "Stretch" />
+
+		<!-- report panel -->
+		<ScrollViewer Grid.Column = "4"
+					  VerticalScrollBarVisibility = "Auto">
+			<StackPanel ZIndex = "1"
+						Background = "#ff333333">
+				<TextBlock TextWrapping = "Wrap"
+						   Margin = "5,5,5,5">
+					Lorem ipsum dolor sit amet, consectetur adipiscing elit. Proin a accumsan nisi, vitae mollis elit. Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos. Cras bibendum risus risus, a sodales turpis porttitor sed. In facilisis metus libero, eu finibus nisl volutpat at. Proin non lectus vitae lacus feugiat sodales sit amet nec tellus. Praesent euismod ultricies nisl, sed ultrices lacus auctor non. Aliquam erat volutpat. Duis molestie ac nisl a ullamcorper. Integer non mauris lorem. Pellentesque porta velit ut nisi sagittis malesuada. Quisque hendrerit orci quis sapien posuere, id finibus metus bibendum. Phasellus euismod nisl ac mollis pretium. Nunc aliquam eget nibh nec consectetur. Integer vel purus interdum, laoreet metus suscipit, sodales tortor.
+				</TextBlock>
+			</StackPanel>
+		</ScrollViewer>
+	</Grid>
+</Window>
