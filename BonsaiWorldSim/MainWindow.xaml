@@ -30,8 +30,7 @@
 
 		<!-- control panel -->
 		<ScrollViewer Grid.Column = "0"
-					  VerticalScrollBarVisibility = "Auto"
-					  >
+					  VerticalScrollBarVisibility = "Auto">
 			<Grid Background = "#ff333333"
 				  ZIndex = "1">
 
@@ -52,7 +51,6 @@
 					<RowDefinition Height = "Auto" />
 				</Grid.RowDefinitions>
 
-
 				<!-- seed -->
 				<Border Grid.Row = "0"
 						Grid.Column = "0">
@@ -70,7 +68,7 @@
 				</Border>
 				<Border Grid.Row = "1"
 						Grid.Column = "1">
-					<Button Click="ButtonBase_OnClick">Expand</Button>
+					<Button Click = "ButtonBase_OnClick">Expand</Button>
 				</Border>
 			</Grid>
 		</ScrollViewer>

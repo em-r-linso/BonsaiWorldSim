@@ -16,13 +16,21 @@ namespace BonsaiWorldSim
 
 		void App_OnDispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
 		{
-			MessageBox.Show(
-				"An unhandled exception just occurred: " + e.Exception.Message,
-				"Exception Sample",
-				MessageBoxButton.OK,
-				MessageBoxImage.Warning
+			var result = MessageBox.Show(
+				e.Exception.Message,
+				"Unhandled Exception",
+				MessageBoxButton.OKCancel,
+				MessageBoxImage.Error
 			);
-			e.Handled = true;
+			switch (result)
+			{
+				case MessageBoxResult.OK:
+					e.Handled = true;
+					break;
+				case MessageBoxResult.Cancel:
+					Current.Shutdown();
+					break;
+			}
 		}
 	}
 }

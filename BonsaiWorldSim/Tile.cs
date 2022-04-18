@@ -1,74 +1,76 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
+using System.Windows.Media;
 
 namespace BonsaiWorldSim
 {
 	public class Tile
 	{
-		protected Tile(Tile parent, Vector2 position)
+		public Tile(Vector2 position)
 		{
-			Parent   = parent;
 			Position = position;
-			Children = new();
+
+			Connections = new();
+
+			Color = new[]
+			{
+				Brushes.White,
+				Brushes.Brown,
+				Brushes.Green,
+				Brushes.Coral,
+				Brushes.Blue
+			}[Simulation.Random.Next(5)];
+
+			Simulation.Tiles.Add(this);
 		}
 
-		public Vector2    Position { get; set; }
-		public List<Tile> Children { get; set; }
+		public Vector2 Position             { get; set; }
+		public Brush   Color                { get; set; }
+		public bool    AttemptedTranslation { get; set; }
+		public bool    IgnoreExclusionZone  { get; set; }
 
-		public Tile Parent { get; set; }
+		public Dictionary<Vector2, Tile> Connections { get; }
 
-		/// <summary>
-		///     Returns all neighboring tiles.
-		/// </summary>
 		public List<Tile> Neighbors
 		{
 			get
 			{
-				return Simulation.DIRECTIONS.Select(direction => Simulation.TileAtPosition(Position + direction))
-				                 .Where(neighbor => neighbor != null)
+				return Simulation.DIRECTIONS.Select(direction => Simulation.GetTileAtPosition(Position + direction))
+				                 .Where(tile => tile != null)
 				                 .ToList();
 			}
 		}
 
-		/// <summary>
-		///     Returns all children and their children, etc.
-		/// </summary>
-		internal List<Tile> AllChildren
+		public void Translate(Vector2 translation)
 		{
-			get
+			// don't translate if the tile is already moved
+			if (AttemptedTranslation)
 			{
-				var result = new List<Tile>();
-
-				if (Children != null)
-				{
-					result.AddRange(Children);
-					foreach (var child in Children)
-						result.AddRange(child.AllChildren);
-				}
-
-				return result;
+				return;
 			}
-		}
 
-		/// <summary>
-		///     Changes the position of the tile and all of its children.
-		/// </summary>
-		public void Move(Vector2 delta)
-		{
-			Position += delta;
-			foreach (var tile in AllChildren)
-				tile.Position += delta;
-		}
+			AttemptedTranslation = true;
 
-		/// <summary>
-		/// Changes this tile's parent and removes itself from its old parent's children.
-		/// </summary>
-		public void ReParent(Tile newParent)
-		{
-			Parent.Children.Remove(this);
-			newParent.Children.Add(this);
-			Parent = newParent;
+			// if this would move the tile into the center hole, break all connections and don't translate
+			if (!IgnoreExclusionZone && ((Position + translation).Length() < Simulation.CENTER_HOLE_RADIUS))
+			{
+				Connections.Clear();
+				return;
+			}
+
+			// push another tile out of the way if necessary
+			var tileInTheWay = Simulation.GetTileAtPosition(Position + translation);
+			tileInTheWay?.Translate(translation);
+
+			// move connected tiles
+			foreach (var (_, value) in Connections)
+			{
+				value.Translate(translation);
+			}
+
+			// move the tile
+			Position += translation;
 		}
 	}
 }

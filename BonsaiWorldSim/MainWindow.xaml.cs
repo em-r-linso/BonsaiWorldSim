@@ -8,21 +8,20 @@ namespace BonsaiWorldSim
 	/// </summary>
 	public partial class MainWindow
 	{
-		bool  IsDragged { get; set; }
-		Point Last      { get; set; }
-
 		public MainWindow()
 		{
 			InitializeComponent();
 
 			Simulation = new();
 
-			HexMap = new HexMap(Canvas);
-			HexMap.DrawHexes(Simulation.AllTiles);
+			HexMap = new(Canvas);
+			HexMap.DrawHexes(Simulation.Tiles);
 		}
 
+		bool       IsDragged  { get; set; }
+		Point      Last       { get; set; }
 		Simulation Simulation { get; }
-		HexMap		HexMap		{ get; }
+		HexMap     HexMap     { get; }
 
 		protected override void OnMouseLeftButtonDown(MouseButtonEventArgs e)
 		{
@@ -56,13 +55,18 @@ namespace BonsaiWorldSim
 				var matrix = Mt.Matrix;
 				matrix.Translate(pos.X - Last.X, pos.Y - Last.Y);
 				Mt.Matrix = matrix;
-				Last     = pos;
+				Last      = pos;
 			}
 		}
 
-		void ButtonBase_OnClick(object sender, RoutedEventArgs e) {
-			Simulation.CenterTile.Expand();
-			HexMap.DrawHexes(Simulation.AllTiles);
+		void ButtonBase_OnClick(object sender, RoutedEventArgs e)
+		{
+			for (var i = 0; i < 100; i++)
+			{
+				Simulation.Expand();
+			}
+
+			HexMap.DrawHexes(Simulation.Tiles);
 		}
 	}
 }
