@@ -68,7 +68,9 @@
 				</Border>
 				<Border Grid.Row = "1"
 						Grid.Column = "1">
-					<Button Click = "ButtonBase_OnClick">Expand</Button>
+					<Button Click = "ButtonBase_OnClick">
+						<AccessText>_Expand</AccessText>
+					</Button>
 				</Border>
 			</Grid>
 		</ScrollViewer>
