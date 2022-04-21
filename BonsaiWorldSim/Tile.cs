@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.IO.Packaging;
 using System.Linq;
 using System.Numerics;
 using System.Windows.Media;
@@ -28,9 +27,7 @@ namespace BonsaiWorldSim
 			Simulation.Tiles.Add(this);
 		}
 
-		public override string ToString() => $"t{Id}";
-
-		string Id { get; set; }
+		string Id { get; }
 
 		public Vector2 Position             { get; set; }
 		public Brush   Color                { get; set; }
@@ -49,8 +46,16 @@ namespace BonsaiWorldSim
 			}
 		}
 
+		public override string ToString() => $"t{Id}";
+
 		public void Connect(Vector2 direction)
 		{
+			// give up if the tile is overlapping with this one
+			if (direction == Vector2.Zero)
+			{
+				return;
+			}
+
 			// give up if there's already a connection in that direction
 			if (Connections.ContainsKey(direction))
 			{
@@ -67,6 +72,12 @@ namespace BonsaiWorldSim
 			// connect the tiles
 			Connections.Add(direction, connection);
 			connection.Connections.Add(direction * -1, this);
+
+			// DELETEME: sanity check
+			if (!connection.Connections.ContainsValue(this) || !Connections.ContainsValue(connection))
+			{
+				throw new("Uh oh!");
+			}
 		}
 
 		public void Disconnect(Vector2 direction)
@@ -77,13 +88,7 @@ namespace BonsaiWorldSim
 				return;
 			}
 
-			// TODO: fix connections sometimes not being mutual
 			var connection = Connections[direction];
-
-			if (!connection.Connections.ContainsValue(this))
-			{
-				throw new("Connection not mutual!");
-			}
 
 			// disconnect the tiles
 			Connections.Remove(direction);
@@ -117,6 +122,8 @@ namespace BonsaiWorldSim
 			if ((tileInTheWay != null) && !Connections.ContainsValue(tileInTheWay))
 			{
 				tileInTheWay.Translate(degrees);
+
+				// tileInTheWay.Translate(translation);
 			}
 
 			// if this would move the tile into the center hole, break all connections and don't translate

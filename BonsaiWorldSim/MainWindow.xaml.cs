@@ -8,18 +8,7 @@ namespace BonsaiWorldSim
 	/// </summary>
 	public partial class MainWindow
 	{
-		const int EXPANSIONS_PER_BUTTON_PRESS = 100;
-
-		static int LastUsedId { get; set; } = 0;
-
-		public static string NextId
-		{
-			get
-			{
-				LastUsedId++;
-				return $"{LastUsedId:000000}";
-			}
-		}
+		const int EXPANSIONS_PER_BUTTON_PRESS = 50;
 
 		public MainWindow()
 		{
@@ -29,6 +18,17 @@ namespace BonsaiWorldSim
 
 			HexMap = new(Canvas);
 			HexMap.DrawHexes(Simulation.Tiles);
+		}
+
+		static int LastUsedId { get; set; }
+
+		public static string NextId
+		{
+			get
+			{
+				LastUsedId++;
+				return $"{LastUsedId:000000}";
+			}
 		}
 
 		bool       IsDragged  { get; set; }

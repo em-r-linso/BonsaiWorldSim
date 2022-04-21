@@ -91,8 +91,9 @@ namespace BonsaiWorldSim
 
 		static void NewTurn()
 		{
-			foreach (var tile in Tiles)
+			foreach (var tile in Tiles.ToArray()) // ToArray to avoid self-modifying collection
 			{
+				ProcessOverlappingTilesAtPosition(tile.Position);
 				tile.AttemptedTranslation = false;
 			}
 		}
@@ -135,11 +136,20 @@ namespace BonsaiWorldSim
 			}
 
 			// push new tiles (all connected together) out from the center
-			var degrees = Random.Next(360);
-			while (newTiles.Any(tile => tile.Position.Length() < CENTER_HOLE_RADIUS))
+			var degrees  = Random.Next(360);
+			var tries    = 0;
+			var maxTries = 100;
+
+			// while (newTiles.Any(tile => tile.Position.Length() < CENTER_HOLE_RADIUS))
+			while (Tiles.Any(tile => tile.Position == Vector2.Zero))
 			{
 				NewTurn();
 				newTiles[0].Translate(degrees);
+				tries++;
+				if (tries > maxTries)
+				{
+					break;
+				}
 			}
 
 			foreach (var tile in newTiles)
