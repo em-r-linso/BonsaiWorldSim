@@ -95,9 +95,13 @@ namespace BonsaiWorldSim
 			connection.Connections.Remove(direction * -1);
 		}
 
-		// EXPERIMENTAL DEGREE TRANSLATION
-		public void Translate(int degrees)
+		void Translate(Vector2 translation, int degrees)
 		{
+			if(translation.Length() > 1.2f)
+			{
+				MainWindow.Popup(translation.Length().ToString());
+			}
+
 			// don't translate if the tile is already moved
 			if (AttemptedTranslation)
 			{
@@ -106,14 +110,10 @@ namespace BonsaiWorldSim
 
 			AttemptedTranslation = true;
 
-			// translation that all connected tiles will be affected by
-			// (pushed tiles will use degrees to generate a random translation)
-			var translation = Simulation.DegreesToRandomHexDirection(degrees);
-
 			// move connected tiles
 			foreach (var (_, value) in Connections)
 			{
-				value.Translate(translation);
+				value.Translate(translation, degrees);
 			}
 
 			// push another tile out of the way if necessary
@@ -122,12 +122,10 @@ namespace BonsaiWorldSim
 			if ((tileInTheWay != null) && !Connections.ContainsValue(tileInTheWay))
 			{
 				tileInTheWay.Translate(degrees);
-
-				// tileInTheWay.Translate(translation);
 			}
 
 			// if this would move the tile into the center hole, break all connections and don't translate
-			if (!IgnoreExclusionZone && ((Position + translation).Length() < Simulation.CENTER_HOLE_RADIUS))
+			if (!IgnoreExclusionZone && ((Position + translation) == Vector2.Zero))
 			{
 				Connections.Clear();
 				return;
@@ -139,33 +137,14 @@ namespace BonsaiWorldSim
 
 		public void Translate(Vector2 translation)
 		{
-			// don't translate if the tile is already moved
-			if (AttemptedTranslation)
-			{
-				return;
-			}
+			var degrees = Simulation.HexDirectionToDegrees(translation);
+			Translate(translation, degrees);
+		}
 
-			AttemptedTranslation = true;
-
-			// if this would move the tile into the center hole, break all connections and don't translate
-			if (!IgnoreExclusionZone && ((Position + translation).Length() < Simulation.CENTER_HOLE_RADIUS))
-			{
-				Connections.Clear();
-				return;
-			}
-
-			// push another tile out of the way if necessary
-			var tileInTheWay = Simulation.GetTileAtPosition(Position + translation);
-			tileInTheWay?.Translate(translation);
-
-			// move connected tiles
-			foreach (var (_, value) in Connections)
-			{
-				value.Translate(translation);
-			}
-
-			// move the tile
-			Position += translation;
+		public void Translate(int degrees)
+		{
+			var translation = Simulation.DegreesToRandomHexDirection(degrees);
+			Translate(translation, degrees);
 		}
 	}
 }

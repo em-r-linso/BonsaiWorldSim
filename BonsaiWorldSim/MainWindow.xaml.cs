@@ -8,7 +8,7 @@ namespace BonsaiWorldSim
 	/// </summary>
 	public partial class MainWindow
 	{
-		const int EXPANSIONS_PER_BUTTON_PRESS = 50;
+		const int EXPANSIONS_PER_BUTTON_PRESS = 1;
 
 		public MainWindow()
 		{

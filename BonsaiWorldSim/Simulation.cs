@@ -7,12 +7,11 @@ namespace BonsaiWorldSim
 {
 	public class Simulation
 	{
-		public const float CENTER_HOLE_RADIUS = 1.5f;
-
-		const float CHANCE_OF_CONNECTING    = 10;
-		const float CHANCE_OF_DISCONNECTING = 10;
-		const int   MIN_TILES_PER_EXPANSION = 5;
-		const int   MAX_TILES_PER_EXPANSION = 15;
+		const float CHANCE_OF_CONNECTING       = 10;
+		const float CHANCE_OF_DISCONNECTING    = 10;
+		const int   MIN_TILES_PER_EXPANSION    = 5;
+		const int   MAX_TILES_PER_EXPANSION    = 15;
+		const int   MAX_ATTEMPTS_TO_CLEAR_HOLE = 100;
 
 		public static readonly Vector2[] DIRECTIONS =
 		{
@@ -59,17 +58,21 @@ namespace BonsaiWorldSim
 					//TODO: modify the first tile based on the others—e.g. it might become a mountain
 					for (var i = 1; i < tilesAtPosition.Length; i++)
 					{
-						var tile = tilesAtPosition[i];
-						foreach (var (direction, _) in tile.Connections)
-						{
-							tile.Disconnect(direction);
-						}
-
-						Tiles.Remove(tile);
+						RemoveTile(tilesAtPosition[i]);
 					}
 
 					break;
 			}
+		}
+
+		static void RemoveTile(Tile tile)
+		{
+			foreach (var (direction, _) in tile.Connections)
+			{
+				tile.Disconnect(direction);
+			}
+
+			Tiles.Remove(tile);
 		}
 
 		/// <summary>
@@ -87,6 +90,12 @@ namespace BonsaiWorldSim
 			var randomValue          = Random.Next(100);
 
 			return randomValue > percentFromLowToHigh ? closestDirectionLow : closestDirectionHigh;
+		}
+
+		public static int HexDirectionToDegrees(Vector2 direction)
+		{
+			var directionIndex = Array.IndexOf(DIRECTIONS, direction);
+			return directionIndex * 60;
 		}
 
 		static void NewTurn()
@@ -130,25 +139,30 @@ namespace BonsaiWorldSim
 					var b = GetTileAtPosition(a.Position + direction);
 					if ((b != null) && newTiles.Contains(b))
 					{
-						a.Connect(direction);
+						// a.Connect(direction);
 					}
 				}
 			}
 
 			// push new tiles (all connected together) out from the center
 			var degrees  = Random.Next(360);
-			var tries    = 0;
-			var maxTries = 100;
-
-			// while (newTiles.Any(tile => tile.Position.Length() < CENTER_HOLE_RADIUS))
-			while (Tiles.Any(tile => tile.Position == Vector2.Zero))
+			for (var attempt = 0; attempt < MAX_ATTEMPTS_TO_CLEAR_HOLE; attempt++)
 			{
 				NewTurn();
 				newTiles[0].Translate(degrees);
-				tries++;
-				if (tries > maxTries)
+
+				// if no tile is at 0,0, then we've cleared the hole
+				if(Tiles.All(tile => tile.Position != Vector2.Zero))
 				{
 					break;
+				}
+
+				// if it just isn't getting out of there, delete the tile at 0,0
+				// NOTE: I'm honestly not sure if this check is a good idea,
+				//       because it really shouldn't be getting stuck for 100 attempts
+				if (attempt == (MAX_ATTEMPTS_TO_CLEAR_HOLE - 1))
+				{
+					RemoveTile(GetTileAtPosition(Vector2.Zero));
 				}
 			}
 

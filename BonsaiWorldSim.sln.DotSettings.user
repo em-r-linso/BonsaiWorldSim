@@ -1,16 +1,4 @@
 ﻿<wpf:ResourceDictionary xml:space="preserve" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:s="clr-namespace:System;assembly=mscorlib" xmlns:ss="urn:shemas-jetbrains-com:settings-storage-xaml" xmlns:wpf="http://schemas.microsoft.com/winfx/2006/xaml/presentation">
-	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=659d4c1b_002D85c9_002D432c_002D8629_002D60d02bf0690c/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" IsActive="True" Name="Connect_ShouldResultInMutualConnections(aX: 1, aY: 0, bX: 0.5, bY: -1)" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;&#xD;
-  &lt;TestAncestor&gt;&#xD;
-    &lt;TestId&gt;xUnit::446BC892-EA34-44F2-9DDC-915F2303CCC4::net5.0-windows7.0::BonsaiWorldSim.Tests.TileConnections&lt;/TestId&gt;&#xD;
-  &lt;/TestAncestor&gt;&#xD;
-&lt;/SessionState&gt;</s:String>
-	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=c2aa5297_002D98c1_002D4478_002D838b_002D2ca8bfa87711/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" Name="Connect_ShouldResultInMutualConnections #2" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;&#xD;
-  &lt;TestAncestor&gt;&#xD;
-    &lt;TestId&gt;xUnit::446BC892-EA34-44F2-9DDC-915F2303CCC4::net5.0-windows7.0::BonsaiWorldSim.Tests.UnitTest1&lt;/TestId&gt;&#xD;
-  &lt;/TestAncestor&gt;&#xD;
-&lt;/SessionState&gt;</s:String>
-	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=f3ef0be6_002D949a_002D4fdb_002D82bf_002Dc4565da477a5/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" Name="Connect_ShouldResultInMutualConnections" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;&#xD;
-  &lt;TestAncestor&gt;&#xD;
-    &lt;TestId&gt;xUnit::446BC892-EA34-44F2-9DDC-915F2303CCC4::net5.0-windows7.0::BonsaiWorldSim.Tests.UnitTest1&lt;/TestId&gt;&#xD;
-  &lt;/TestAncestor&gt;&#xD;
+	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=4c8f18e4_002D8764_002D4030_002D8efc_002D14d66bd3f45f/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" IsActive="True" Name="All tests from Solution" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;&#xD;
+  &lt;Solution /&gt;&#xD;
 &lt;/SessionState&gt;</s:String></wpf:ResourceDictionary>
