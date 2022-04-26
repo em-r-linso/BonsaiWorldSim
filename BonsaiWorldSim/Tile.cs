@@ -7,7 +7,7 @@ namespace BonsaiWorldSim
 {
 	public class Tile
 	{
-		public Tile(Vector2 position)
+		public Tile(Vector2 position, Brush color = null)
 		{
 			Position = position;
 
@@ -15,14 +15,15 @@ namespace BonsaiWorldSim
 
 			Connections = new();
 
-			Color = new[]
-			{
-				Brushes.White,
-				Brushes.Brown,
-				Brushes.Green,
-				Brushes.Coral,
-				Brushes.Blue
-			}[Simulation.Random.Next(5)];
+			Color = color
+			     ?? new[]
+			        {
+				        Brushes.White,
+				        Brushes.Brown,
+				        Brushes.Green,
+				        Brushes.Coral,
+				        Brushes.Blue
+			        }[Simulation.Random.Next(5)];
 
 			Simulation.Tiles.Add(this);
 		}
@@ -71,13 +72,15 @@ namespace BonsaiWorldSim
 
 			// connect the tiles
 			Connections.Add(direction, connection);
-			connection.Connections.Add(direction * -1, this);
 
-			// DELETEME: sanity check
-			if (!connection.Connections.ContainsValue(this) || !Connections.ContainsValue(connection))
+			// DELETEME: handling weird bug
+			if (connection.Connections.ContainsKey(direction * -1))
 			{
-				throw new("Uh oh!");
+				MainWindow.Popup("Connection already exists, but only from the other side???");
+				return;
 			}
+
+			connection.Connections.Add(direction * -1, this);
 		}
 
 		public void Disconnect(Vector2 direction)
@@ -97,11 +100,6 @@ namespace BonsaiWorldSim
 
 		void Translate(Vector2 translation, int degrees)
 		{
-			if(translation.Length() > 1.2f)
-			{
-				MainWindow.Popup(translation.Length().ToString());
-			}
-
 			// don't translate if the tile is already moved
 			if (AttemptedTranslation)
 			{
@@ -117,28 +115,23 @@ namespace BonsaiWorldSim
 			}
 
 			// push another tile out of the way if necessary
-			// (ignore connected tiles)
 			var tileInTheWay = Simulation.GetTileAtPosition(Position + translation);
-			if ((tileInTheWay != null) && !Connections.ContainsValue(tileInTheWay))
-			{
-				tileInTheWay.Translate(degrees);
-			}
+			tileInTheWay?.Translate(degrees);
 
 			// if this would move the tile into the center hole, break all connections and don't translate
 			if (!IgnoreExclusionZone && ((Position + translation) == Vector2.Zero))
 			{
-				Connections.Clear();
+				// Connections.Clear();
+				foreach (var (direction, _) in Connections.ToArray())
+				{
+					Disconnect(direction);
+				}
+
 				return;
 			}
 
 			// move the tile
 			Position += translation;
-		}
-
-		public void Translate(Vector2 translation)
-		{
-			var degrees = Simulation.HexDirectionToDegrees(translation);
-			Translate(translation, degrees);
 		}
 
 		public void Translate(int degrees)

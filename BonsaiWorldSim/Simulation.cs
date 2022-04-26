@@ -2,15 +2,16 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
+using System.Windows.Media;
 
 namespace BonsaiWorldSim
 {
 	public class Simulation
 	{
-		const float CHANCE_OF_CONNECTING       = 10;
-		const float CHANCE_OF_DISCONNECTING    = 10;
-		const int   MIN_TILES_PER_EXPANSION    = 5;
-		const int   MAX_TILES_PER_EXPANSION    = 15;
+		const float CHANCE_OF_CONNECTING       = 8;
+		const float CHANCE_OF_DISCONNECTING    = 2;
+		const int   MIN_TILES_PER_EXPANSION    = 1;
+		const int   MAX_TILES_PER_EXPANSION    = 3;
 		const int   MAX_ATTEMPTS_TO_CLEAR_HOLE = 100;
 
 		public static readonly Vector2[] DIRECTIONS =
@@ -67,7 +68,7 @@ namespace BonsaiWorldSim
 
 		static void RemoveTile(Tile tile)
 		{
-			foreach (var (direction, _) in tile.Connections)
+			foreach (var (direction, _) in tile.Connections.ToArray())
 			{
 				tile.Disconnect(direction);
 			}
@@ -100,7 +101,7 @@ namespace BonsaiWorldSim
 
 		static void NewTurn()
 		{
-			foreach (var tile in Tiles.ToArray()) // ToArray to avoid self-modifying collection
+			foreach (var tile in Tiles.ToArray())
 			{
 				ProcessOverlappingTilesAtPosition(tile.Position);
 				tile.AttemptedTranslation = false;
@@ -110,25 +111,25 @@ namespace BonsaiWorldSim
 		public static void Expand()
 		{
 			// make a new tile, then move it out
+			var newTileColor = new Brush[]
+			{
+				Brushes.White,
+				Brushes.Brown,
+				Brushes.Green,
+				Brushes.Coral,
+				Brushes.Blue
+			}[Random.Next(5)];
 			var newTiles = new Tile[Random.Next(MIN_TILES_PER_EXPANSION, MAX_TILES_PER_EXPANSION)];
 			for (var i = 0; i < newTiles.Length; i++)
 			{
-				NewTurn();
-
-				switch (i)
+				if (i > 0)
 				{
-					// first 7 tiles make a solid hexagon (because a solid hexagon is made of smaller hexagons)
-					case > 0 and <= 7:
-						newTiles[i - 1].Translate(DIRECTIONS[i % DIRECTIONS.Length]);
-						break;
-
-					// tiles after 7 are added on randomly
-					case > 7:
-						newTiles[i - 1].Translate(Random.Next(360));
-						break;
+					newTiles[i - 1].Translate(Random.Next(360));
 				}
 
-				newTiles[i] = new(Vector2.Zero) {IgnoreExclusionZone = true};
+				newTiles[i] = new(Vector2.Zero, newTileColor) {IgnoreExclusionZone = true};
+
+				NewTurn();
 			}
 
 			// connect all new tiles
@@ -139,20 +140,19 @@ namespace BonsaiWorldSim
 					var b = GetTileAtPosition(a.Position + direction);
 					if ((b != null) && newTiles.Contains(b))
 					{
-						// a.Connect(direction);
+						a.Connect(direction);
 					}
 				}
 			}
 
 			// push new tiles (all connected together) out from the center
-			var degrees  = Random.Next(360);
+			var degrees = Random.Next(360);
 			for (var attempt = 0; attempt < MAX_ATTEMPTS_TO_CLEAR_HOLE; attempt++)
 			{
-				NewTurn();
 				newTiles[0].Translate(degrees);
 
 				// if no tile is at 0,0, then we've cleared the hole
-				if(Tiles.All(tile => tile.Position != Vector2.Zero))
+				if (Tiles.All(tile => tile.Position != Vector2.Zero))
 				{
 					break;
 				}
@@ -164,6 +164,8 @@ namespace BonsaiWorldSim
 				{
 					RemoveTile(GetTileAtPosition(Vector2.Zero));
 				}
+
+				NewTurn();
 			}
 
 			foreach (var tile in newTiles)
@@ -171,30 +173,53 @@ namespace BonsaiWorldSim
 				tile.IgnoreExclusionZone = false;
 			}
 
-			// foreach (var tile in Tiles)
-			// {
-			// 	foreach (var direction in DIRECTIONS)
-			// 	{
-			// 		if (tile.Connections.ContainsKey(direction))
-			// 		{
-			// 			if (Random.Next(100) < CHANCE_OF_DISCONNECTING)
-			// 			{
-			// 				tile.Connections[direction].Connections.Remove(direction * -1);
-			// 				tile.Connections.Remove(direction);
-			// 			}
-			// 		}
-			//
-			// 		else
-			// 		{
-			// 			var neighbor = GetTileAtPosition(tile.Position + direction);
-			// 			if ((neighbor != null) && (Random.Next(100) < CHANCE_OF_CONNECTING))
-			// 			{
-			// 				tile.Connections.Add(direction, neighbor);
-			// 				neighbor.Connections.Add(direction * -1, tile);
-			// 			}
-			// 		}
-			// 	}
-			// }
+			// DELETEME: overkill debugging
+			while (!BandaidFix())
+			{
+				// :(
+			}
+
+			foreach (var tile in Tiles.ToArray())
+			{
+				foreach (var direction in DIRECTIONS)
+				{
+					if (tile.Connections.ContainsKey(direction))
+					{
+						if (Random.Next(100) < CHANCE_OF_DISCONNECTING)
+						{
+							tile.Connections[direction].Connections.Remove(direction * -1);
+							tile.Connections.Remove(direction);
+						}
+					}
+
+					else
+					{
+						var neighbor = GetTileAtPosition(tile.Position + direction);
+						if ((neighbor != null) && (Random.Next(100) < CHANCE_OF_CONNECTING))
+						{
+							tile.Connections.Add(direction, neighbor);
+							neighbor.Connections.Add(direction * -1, tile);
+						}
+					}
+				}
+			}
+		}
+
+		static bool BandaidFix()
+		{
+			foreach (var tile in Tiles.ToArray())
+			{
+				foreach (var (direction, connection) in tile.Connections.ToArray())
+				{
+					if ((connection != null) && ((connection.Position - tile.Position) != direction))
+					{
+						tile.Disconnect(direction);
+						ProcessOverlappingTilesAtPosition(connection.Position);
+						return false;
+					}
+				}
+			}
+			return true;
 		}
 	}
 }
