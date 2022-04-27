@@ -7,137 +7,118 @@ namespace BonsaiWorldSim
 {
 	public class Tile
 	{
-		public Tile(Vector2 position, Brush color = null)
+		public Tile(Simulation simulation)
 		{
-			Position = position;
+			Simulation = simulation;
 
-			Id = MainWindow.NextId;
-
+			Color       = (SolidColorBrush)new BrushConverter().ConvertFrom("#44ffffff");
 			Connections = new();
-
-			Color = color
-			     ?? new[]
-			        {
-				        Brushes.White,
-				        Brushes.Brown,
-				        Brushes.Green,
-				        Brushes.Coral,
-				        Brushes.Blue
-			        }[Simulation.Random.Next(5)];
-
-			Simulation.Tiles.Add(this);
 		}
 
-		string Id { get; }
+		public bool       AssignedMovement { get; set; }
+		public bool       DidPull          { get; set; }
+		public Vector2    Position         { get; set; }
+		public Brush      Color            { get; }
+		public List<Tile> Connections      { get; }
 
-		public Vector2 Position             { get; set; }
-		public Brush   Color                { get; set; }
-		public bool    AttemptedTranslation { get; set; }
-		public bool    IgnoreExclusionZone  { get; set; }
+		Simulation Simulation { get; }
+		Vector2    MoveIntent { get; set; }
+		int        Angle      { get; set; }
 
-		public Dictionary<Vector2, Tile> Connections { get; }
-
-		public List<Tile> Neighbors
+		public void Push(int degrees)
 		{
-			get
+			// don't assign multiple movements to the same tile
+			if (AssignedMovement)
 			{
-				return Simulation.DIRECTIONS.Select(direction => Simulation.GetTileAtPosition(Position + direction))
-				                 .Where(tile => tile != null)
-				                 .ToList();
+				return;
 			}
+
+			AssignedMovement = true;
+
+			// set move intent
+			Angle      = degrees;
+			MoveIntent = Simulation.DegreesToRandomHexDirection(Angle);
+
+			// move tiles out of the way
+			MoveTilesOutOfTheWay();
 		}
 
-		public override string ToString() => $"t{Id}";
-
-		public void Connect(Vector2 direction)
+		public bool Pull(Tile tileToPull)
 		{
-			// give up if the tile is overlapping with this one
-			if (direction == Vector2.Zero)
+			// don't assign multiple movements to the same tile
+			if (tileToPull.AssignedMovement)
 			{
-				return;
+				Disconnect(tileToPull);
+				return false;
 			}
 
-			// give up if there's already a connection in that direction
-			if (Connections.ContainsKey(direction))
+			// random chance to fail
+			if (Simulation.Random.NextDouble() < Simulation.CONNECTION_FAIL_CHANCE)
 			{
-				return;
+				Disconnect(tileToPull);
+				return false;
 			}
 
-			// give up if there's no tile in that direction
-			var connection = Simulation.GetTileAtPosition(Position + direction);
-			if (connection == null)
-			{
-				return;
-			}
+			tileToPull.AssignedMovement = true;
 
-			// connect the tiles
-			Connections.Add(direction, connection);
+			// set move intent according to puller
+			tileToPull.MoveIntent = MoveIntent;
+			tileToPull.Angle      = Angle;
 
-			// DELETEME: handling weird bug
-			if (connection.Connections.ContainsKey(direction * -1))
-			{
-				MainWindow.Popup("Connection already exists, but only from the other side???");
-				return;
-			}
+			// move tiles out of the way
+			tileToPull.MoveTilesOutOfTheWay();
 
-			connection.Connections.Add(direction * -1, this);
+			// return true to indicate that a pull happened
+			return true;
 		}
 
-		public void Disconnect(Vector2 direction)
+		void MoveTilesOutOfTheWay()
 		{
-			// give up if there's no connection in that direction
-			if (!Connections.ContainsKey(direction))
+			// if there are any tiles in the way, push them
+			foreach (var tileInTheWay in Simulation.GetTilesAtPosition(Position + MoveIntent))
 			{
-				return;
-			}
+				tileInTheWay.Push(Angle);
 
-			var connection = Connections[direction];
-
-			// disconnect the tiles
-			Connections.Remove(direction);
-			connection.Connections.Remove(direction * -1);
-		}
-
-		void Translate(Vector2 translation, int degrees)
-		{
-			// don't translate if the tile is already moved
-			if (AttemptedTranslation)
-			{
-				return;
-			}
-
-			AttemptedTranslation = true;
-
-			// move connected tiles
-			foreach (var (_, value) in Connections)
-			{
-				value.Translate(translation, degrees);
-			}
-
-			// push another tile out of the way if necessary
-			var tileInTheWay = Simulation.GetTileAtPosition(Position + translation);
-			tileInTheWay?.Translate(degrees);
-
-			// if this would move the tile into the center hole, break all connections and don't translate
-			if (!IgnoreExclusionZone && ((Position + translation) == Vector2.Zero))
-			{
-				// Connections.Clear();
-				foreach (var (direction, _) in Connections.ToArray())
+				// random chance to connect to the tile in the way
+				if (Simulation.Random.NextDouble() < Simulation.PUSH_CONNECTION_CHANCE)
 				{
-					Disconnect(direction);
+					Connect(tileInTheWay);
 				}
-
-				return;
 			}
-
-			// move the tile
-			Position += translation;
 		}
 
-		public void Translate(int degrees)
+		public void Move()
 		{
-			var translation = Simulation.DegreesToRandomHexDirection(degrees);
-			Translate(translation, degrees);
+			if (AssignedMovement)
+			{
+				Position += MoveIntent;
+				DisconnectFromDistantTiles();
+			}
+
+			AssignedMovement = false;
+			DidPull          = false;
+		}
+
+		void DisconnectFromDistantTiles()
+		{
+			foreach (var connection in Connections
+			                          .Where(connection => Vector2.Distance(Position, connection.Position) > 1.2f)
+			                          .ToArray())
+			{
+				Disconnect(connection);
+			}
+		}
+
+		public void Connect(Tile tile)
+		{
+			Connections.Add(tile);
+			tile.Connections.Add(this);
+		}
+
+		public void Disconnect(Tile tile)
+		{
+			Connections.Remove(tile);
+			tile.Connections.Remove(this);
 		}
 	}
 }

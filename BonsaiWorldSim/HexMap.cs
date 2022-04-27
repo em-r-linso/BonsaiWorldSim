@@ -8,14 +8,14 @@ namespace BonsaiWorldSim
 {
 	public class HexMap
 	{
-		const int   HEX_SIZE                = 10;
+		const int   HEX_SIZE                = 20;
 		const float HEX_WIDTH_RATIO         = 0.86602540378f; // sqrt(3) / 2
 		const float HEX_HEIGHT              = HEX_SIZE;
 		const float HEX_WIDTH               = HEX_SIZE * HEX_WIDTH_RATIO;
 		const float HEX_UPPER_CORNER_HEIGHT = 0.25f;
 		const float HEX_LOWER_CORNER_HEIGHT = 0.75f;
 
-		public HexMap(Canvas canvas) { Canvas = canvas; }
+		public HexMap(Canvas canvas) => Canvas = canvas;
 
 		Canvas Canvas { get; }
 
@@ -60,11 +60,13 @@ namespace BonsaiWorldSim
 			AddHex(Vector2.Zero, null, Brushes.Fuchsia);
 
 			foreach (var tile in tiles)
+			{
 				AddHex(tile.Position, tile.Color, null);
+			}
 
 			foreach (var tile in tiles)
 			{
-				foreach (var (key, connection) in tile.Connections)
+				foreach (var connection in tile.Connections)
 				{
 					Canvas.Children.Add(
 						new Line

@@ -2,17 +2,16 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
-using System.Windows.Media;
 
 namespace BonsaiWorldSim
 {
 	public class Simulation
 	{
-		const float CHANCE_OF_CONNECTING       = 8;
-		const float CHANCE_OF_DISCONNECTING    = 2;
-		const int   MIN_TILES_PER_EXPANSION    = 1;
-		const int   MAX_TILES_PER_EXPANSION    = 3;
-		const int   MAX_ATTEMPTS_TO_CLEAR_HOLE = 100;
+		public const float CONNECTION_FAIL_CHANCE = 0.05f;
+		public const float PUSH_CONNECTION_CHANCE = 0.1f;
+
+		const float CONNECT_CHANCE    = 0.05f;
+		const float DISCONNECT_CHANCE = 0.01f;
 
 		public static readonly Vector2[] DIRECTIONS =
 		{
@@ -24,57 +23,10 @@ namespace BonsaiWorldSim
 			new(0.5f, 1)    // down-right
 		};
 
-		public static Random     Random { get; } = new();
-		public static List<Tile> Tiles  { get; } = new();
+		// TODO: move Random out of Simulation
+		public static Random Random { get; } = new();
 
-		static Tile[] GetTilesAtPosition(Vector2 position)
-		{
-			return Tiles.Where(t => t.Position == position).ToArray();
-		}
-
-		public static Tile GetTileAtPosition(Vector2 position)
-		{
-			//TODO: move overlapping tiles processing out of this method
-			ProcessOverlappingTilesAtPosition(position);
-
-			var tilesAtPosition = GetTilesAtPosition(position);
-			return tilesAtPosition.Length switch
-			{
-				0 => null,
-				1 => tilesAtPosition[0],
-				_ => throw new("Overlapping tiles at position " + position)
-			};
-		}
-
-		static void ProcessOverlappingTilesAtPosition(Vector2 position)
-		{
-			var tilesAtPosition = GetTilesAtPosition(position);
-			switch (tilesAtPosition.Length)
-			{
-				case 0 or 1:
-					break;
-				default:
-
-					// remove all tiles except the first one
-					//TODO: modify the first tile based on the others—e.g. it might become a mountain
-					for (var i = 1; i < tilesAtPosition.Length; i++)
-					{
-						RemoveTile(tilesAtPosition[i]);
-					}
-
-					break;
-			}
-		}
-
-		static void RemoveTile(Tile tile)
-		{
-			foreach (var (direction, _) in tile.Connections.ToArray())
-			{
-				tile.Disconnect(direction);
-			}
-
-			Tiles.Remove(tile);
-		}
+		public List<Tile> Tiles { get; set; } = new();
 
 		/// <summary>
 		///     Returns one of the two hex directions that are closest to the given degree, weighted such that the hex direction
@@ -93,133 +45,66 @@ namespace BonsaiWorldSim
 			return randomValue > percentFromLowToHigh ? closestDirectionLow : closestDirectionHigh;
 		}
 
-		public static int HexDirectionToDegrees(Vector2 direction)
+		public Tile[] GetTilesAtPosition(Vector2 position)
 		{
-			var directionIndex = Array.IndexOf(DIRECTIONS, direction);
-			return directionIndex * 60;
+			return Tiles.Where(tile => tile.Position == position).ToArray();
 		}
 
-		static void NewTurn()
+		public void Expand()
 		{
-			foreach (var tile in Tiles.ToArray())
-			{
-				ProcessOverlappingTilesAtPosition(tile.Position);
-				tile.AttemptedTranslation = false;
-			}
-		}
+			var newTile = new Tile(this);
+			Tiles.Add(newTile);
 
-		public static void Expand()
-		{
-			// make a new tile, then move it out
-			var newTileColor = new Brush[]
-			{
-				Brushes.White,
-				Brushes.Brown,
-				Brushes.Green,
-				Brushes.Coral,
-				Brushes.Blue
-			}[Random.Next(5)];
-			var newTiles = new Tile[Random.Next(MIN_TILES_PER_EXPANSION, MAX_TILES_PER_EXPANSION)];
-			for (var i = 0; i < newTiles.Length; i++)
-			{
-				if (i > 0)
-				{
-					newTiles[i - 1].Translate(Random.Next(360));
-				}
-
-				newTiles[i] = new(Vector2.Zero, newTileColor) {IgnoreExclusionZone = true};
-
-				NewTurn();
-			}
-
-			// connect all new tiles
-			foreach (var a in newTiles)
+			foreach (var tile in Tiles)
 			{
 				foreach (var direction in DIRECTIONS)
 				{
-					var b = GetTileAtPosition(a.Position + direction);
-					if ((b != null) && newTiles.Contains(b))
+					foreach (var tileInDirection in GetTilesAtPosition(tile.Position + direction))
 					{
-						a.Connect(direction);
-					}
-				}
-			}
-
-			// push new tiles (all connected together) out from the center
-			var degrees = Random.Next(360);
-			for (var attempt = 0; attempt < MAX_ATTEMPTS_TO_CLEAR_HOLE; attempt++)
-			{
-				newTiles[0].Translate(degrees);
-
-				// if no tile is at 0,0, then we've cleared the hole
-				if (Tiles.All(tile => tile.Position != Vector2.Zero))
-				{
-					break;
-				}
-
-				// if it just isn't getting out of there, delete the tile at 0,0
-				// NOTE: I'm honestly not sure if this check is a good idea,
-				//       because it really shouldn't be getting stuck for 100 attempts
-				if (attempt == (MAX_ATTEMPTS_TO_CLEAR_HOLE - 1))
-				{
-					RemoveTile(GetTileAtPosition(Vector2.Zero));
-				}
-
-				NewTurn();
-			}
-
-			foreach (var tile in newTiles)
-			{
-				tile.IgnoreExclusionZone = false;
-			}
-
-			// DELETEME: overkill debugging
-			while (!BandaidFix())
-			{
-				// :(
-			}
-
-			foreach (var tile in Tiles.ToArray())
-			{
-				foreach (var direction in DIRECTIONS)
-				{
-					if (tile.Connections.ContainsKey(direction))
-					{
-						if (Random.Next(100) < CHANCE_OF_DISCONNECTING)
+						if (tile.Connections.Contains(tileInDirection))
 						{
-							tile.Connections[direction].Connections.Remove(direction * -1);
-							tile.Connections.Remove(direction);
+							if (Random.NextDouble() < DISCONNECT_CHANCE)
+							{
+								tile.Disconnect(tileInDirection);
+							}
 						}
-					}
-
-					else
-					{
-						var neighbor = GetTileAtPosition(tile.Position + direction);
-						if ((neighbor != null) && (Random.Next(100) < CHANCE_OF_CONNECTING))
+						else if (Random.NextDouble() < CONNECT_CHANCE)
 						{
-							tile.Connections.Add(direction, neighbor);
-							neighbor.Connections.Add(direction * -1, tile);
+							tile.Connect(tileInDirection);
 						}
 					}
 				}
 			}
-		}
 
-		static bool BandaidFix()
-		{
-			foreach (var tile in Tiles.ToArray())
+			newTile.Push(Random.Next(360));
+
+			var keepTrying = true;
+			while (keepTrying)
 			{
-				foreach (var (direction, connection) in tile.Connections.ToArray())
+				keepTrying = false;
+
+				// for every tile that is going to move...
+				// (only once per tile)
+				foreach (var tile in Tiles.Where(tile => tile.AssignedMovement && !tile.DidPull))
 				{
-					if ((connection != null) && ((connection.Position - tile.Position) != direction))
+					tile.DidPull = true;
+
+					// pull every connection
+					foreach (var connection in tile.Connections.ToArray())
 					{
-						tile.Disconnect(direction);
-						ProcessOverlappingTilesAtPosition(connection.Position);
-						return false;
+						if (tile.Pull(connection))
+						{
+							// if the pull was successful, there might be more connections to pull
+							keepTrying = true;
+						}
 					}
 				}
 			}
-			return true;
+
+			foreach (var tile in Tiles)
+			{
+				tile.Move();
+			}
 		}
 	}
 }
