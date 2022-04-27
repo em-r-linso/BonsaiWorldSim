@@ -7,70 +7,118 @@ namespace BonsaiWorldSim
 {
 	public class Tile
 	{
-		public Tile(Vector2 position)
+		public Tile(Simulation simulation)
 		{
-			Position = position;
+			Simulation = simulation;
 
+			Color       = (SolidColorBrush)new BrushConverter().ConvertFrom("#44ffffff");
 			Connections = new();
-
-			Color = new[]
-			{
-				Brushes.White,
-				Brushes.Brown,
-				Brushes.Green,
-				Brushes.Coral,
-				Brushes.Blue
-			}[Simulation.Random.Next(5)];
-
-			Simulation.Tiles.Add(this);
 		}
 
-		public Vector2 Position             { get; set; }
-		public Brush   Color                { get; set; }
-		public bool    AttemptedTranslation { get; set; }
-		public bool    IgnoreExclusionZone  { get; set; }
+		public bool       AssignedMovement { get; set; }
+		public bool       DidPull          { get; set; }
+		public Vector2    Position         { get; set; }
+		public Brush      Color            { get; }
+		public List<Tile> Connections      { get; }
 
-		public Dictionary<Vector2, Tile> Connections { get; }
+		Simulation Simulation { get; }
+		Vector2    MoveIntent { get; set; }
+		int        Angle      { get; set; }
 
-		public List<Tile> Neighbors
+		public void Push(int degrees)
 		{
-			get
-			{
-				return Simulation.DIRECTIONS.Select(direction => Simulation.GetTileAtPosition(Position + direction))
-				                 .Where(tile => tile != null)
-				                 .ToList();
-			}
-		}
-
-		public void Translate(Vector2 translation)
-		{
-			// don't translate if the tile is already moved
-			if (AttemptedTranslation)
+			// don't assign multiple movements to the same tile
+			if (AssignedMovement)
 			{
 				return;
 			}
 
-			AttemptedTranslation = true;
+			AssignedMovement = true;
 
-			// if this would move the tile into the center hole, break all connections and don't translate
-			if (!IgnoreExclusionZone && ((Position + translation).Length() < Simulation.CENTER_HOLE_RADIUS))
+			// set move intent
+			Angle      = degrees;
+			MoveIntent = Simulation.DegreesToRandomHexDirection(Angle);
+
+			// move tiles out of the way
+			MoveTilesOutOfTheWay();
+		}
+
+		public bool Pull(Tile tileToPull)
+		{
+			// don't assign multiple movements to the same tile
+			if (tileToPull.AssignedMovement)
 			{
-				Connections.Clear();
-				return;
+				Disconnect(tileToPull);
+				return false;
 			}
 
-			// push another tile out of the way if necessary
-			var tileInTheWay = Simulation.GetTileAtPosition(Position + translation);
-			tileInTheWay?.Translate(translation);
-
-			// move connected tiles
-			foreach (var (_, value) in Connections)
+			// random chance to fail
+			if (Simulation.Random.NextDouble() < Simulation.CONNECTION_FAIL_CHANCE)
 			{
-				value.Translate(translation);
+				Disconnect(tileToPull);
+				return false;
 			}
 
-			// move the tile
-			Position += translation;
+			tileToPull.AssignedMovement = true;
+
+			// set move intent according to puller
+			tileToPull.MoveIntent = MoveIntent;
+			tileToPull.Angle      = Angle;
+
+			// move tiles out of the way
+			tileToPull.MoveTilesOutOfTheWay();
+
+			// return true to indicate that a pull happened
+			return true;
+		}
+
+		void MoveTilesOutOfTheWay()
+		{
+			// if there are any tiles in the way, push them
+			foreach (var tileInTheWay in Simulation.GetTilesAtPosition(Position + MoveIntent))
+			{
+				tileInTheWay.Push(Angle);
+
+				// random chance to connect to the tile in the way
+				if (Simulation.Random.NextDouble() < Simulation.PUSH_CONNECTION_CHANCE)
+				{
+					Connect(tileInTheWay);
+				}
+			}
+		}
+
+		public void Move()
+		{
+			if (AssignedMovement)
+			{
+				Position += MoveIntent;
+				DisconnectFromDistantTiles();
+			}
+
+			AssignedMovement = false;
+			DidPull          = false;
+		}
+
+		void DisconnectFromDistantTiles()
+		{
+			foreach (var connection in Connections
+			                          .Where(connection => Vector2.Distance(Position, connection.Position) > 1.2f)
+			                          .ToArray())
+			{
+				Disconnect(connection);
+			}
+		}
+
+		public void Connect(Tile tile)
+		{
+			Connections.Add(tile);
+			tile.Connections.Add(this);
+		}
+
+		public void Disconnect(Tile tile)
+		{
+			Connections.Remove(tile);
+			tile.Connections.Remove(this);
 		}
 	}
 }

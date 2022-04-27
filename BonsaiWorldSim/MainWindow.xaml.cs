@@ -8,6 +8,8 @@ namespace BonsaiWorldSim
 	/// </summary>
 	public partial class MainWindow
 	{
+		const int EXPANSIONS_PER_BUTTON_PRESS = 1;
+
 		public MainWindow()
 		{
 			InitializeComponent();
@@ -16,6 +18,17 @@ namespace BonsaiWorldSim
 
 			HexMap = new(Canvas);
 			HexMap.DrawHexes(Simulation.Tiles);
+		}
+
+		static int LastUsedId { get; set; }
+
+		public static string NextId
+		{
+			get
+			{
+				LastUsedId++;
+				return $"{LastUsedId:000000}";
+			}
 		}
 
 		bool       IsDragged  { get; set; }
@@ -61,12 +74,14 @@ namespace BonsaiWorldSim
 
 		void ButtonBase_OnClick(object sender, RoutedEventArgs e)
 		{
-			for (var i = 0; i < 100; i++)
+			for (var i = 0; i < EXPANSIONS_PER_BUTTON_PRESS; i++)
 			{
 				Simulation.Expand();
 			}
 
 			HexMap.DrawHexes(Simulation.Tiles);
 		}
+
+		public static void Popup(string message) { MessageBox.Show(message); }
 	}
 }
