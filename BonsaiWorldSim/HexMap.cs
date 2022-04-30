@@ -1,8 +1,10 @@
 ﻿using System.Collections.Generic;
+using System.Drawing;
 using System.Numerics;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Shapes;
+using Color = System.Windows.Media.Color;
 
 namespace BonsaiWorldSim
 {
@@ -14,6 +16,8 @@ namespace BonsaiWorldSim
 		const float HEX_WIDTH               = HEX_SIZE * HEX_WIDTH_RATIO;
 		const float HEX_UPPER_CORNER_HEIGHT = 0.25f;
 		const float HEX_LOWER_CORNER_HEIGHT = 0.75f;
+		const float MIN_ALTITUDE            = 0;
+		const float MAX_ALTITUDE            = 10;
 
 		public HexMap(Canvas canvas) => Canvas = canvas;
 
@@ -61,7 +65,9 @@ namespace BonsaiWorldSim
 
 			foreach (var tile in tiles)
 			{
-				AddHex(tile.Position, tile.Color, null);
+				var value = (byte)((tile.Altitude / MAX_ALTITUDE) * 256);
+				var color = new SolidColorBrush(Color.FromRgb(value, value, value));
+				AddHex(tile.Position, color, null);
 			}
 
 			foreach (var tile in tiles)

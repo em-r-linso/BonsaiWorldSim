@@ -105,6 +105,30 @@ namespace BonsaiWorldSim
 			{
 				tile.Move();
 			}
+
+			// process overlapping tiles
+			foreach (var tile in Tiles.ToArray())
+			{
+				var tilesAtPosition = GetTilesAtPosition(tile.Position);
+				if (tilesAtPosition.Length > 1)
+				{
+					// create a new tile at this position, which merges features from the overlapping tiles
+					Tiles.Add(
+						new(this)
+						{
+							Position    = tile.Position,
+							Connections = tilesAtPosition.SelectMany(t => t.Connections).ToList(),
+							Altitude    = tilesAtPosition.Sum(t => t.Altitude)
+						}
+					);
+
+					// delete the old tiles at this position
+					foreach (var tileAtPosition in tilesAtPosition)
+					{
+						tileAtPosition.Delete();
+					}
+				}
+			}
 		}
 	}
 }

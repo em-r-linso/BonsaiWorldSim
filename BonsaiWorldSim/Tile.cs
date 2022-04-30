@@ -11,15 +11,15 @@ namespace BonsaiWorldSim
 		{
 			Simulation = simulation;
 
-			Color       = (SolidColorBrush)new BrushConverter().ConvertFrom("#44ffffff");
 			Connections = new();
+			Altitude    = 1;
 		}
 
 		public bool       AssignedMovement { get; set; }
 		public bool       DidPull          { get; set; }
 		public Vector2    Position         { get; set; }
-		public Brush      Color            { get; }
-		public List<Tile> Connections      { get; }
+		public List<Tile> Connections      { get; set; }
+		public int Altitude { get; set; }
 
 		Simulation Simulation { get; }
 		Vector2    MoveIntent { get; set; }
@@ -119,6 +119,15 @@ namespace BonsaiWorldSim
 		{
 			Connections.Remove(tile);
 			tile.Connections.Remove(this);
+		}
+
+		public void Delete()
+		{
+			Simulation.Tiles.Remove(this);
+			foreach (var connection in Connections)
+			{
+				Disconnect(connection);
+			}
 		}
 	}
 }
