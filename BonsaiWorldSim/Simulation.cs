@@ -13,7 +13,7 @@ namespace BonsaiWorldSim
 		const float CONNECT_CHANCE    = 0.05f;
 		const float DISCONNECT_CHANCE = 0.01f;
 
-		public static readonly Vector2[] DIRECTIONS =
+		static readonly Vector2[] DIRECTIONS =
 		{
 			new(1, 0),      // right
 			new(0.5f, -1),  // up-right
@@ -26,7 +26,7 @@ namespace BonsaiWorldSim
 		// TODO: move Random out of Simulation
 		public static Random Random { get; } = new();
 
-		public List<Tile> Tiles { get; set; } = new();
+		public List<Tile> Tiles { get; } = new();
 
 		/// <summary>
 		///     Returns one of the two hex directions that are closest to the given degree, weighted such that the hex direction
@@ -45,16 +45,20 @@ namespace BonsaiWorldSim
 			return randomValue > percentFromLowToHigh ? closestDirectionLow : closestDirectionHigh;
 		}
 
+		/// <summary>
+		///     Returns an array of all tiles at the given position.
+		/// </summary>
 		public Tile[] GetTilesAtPosition(Vector2 position)
 		{
 			return Tiles.Where(tile => tile.Position == position).ToArray();
 		}
 
-		public void Expand()
+		/// <summary>
+		///     Makes random connections (and disconnections) between tiles based on the constants CONNECT_CHANCE and
+		///     DISCONNECT_CHANCE.
+		/// </summary>
+		void MakeRandomConnections()
 		{
-			var newTile = new Tile(this);
-			Tiles.Add(newTile);
-
 			foreach (var tile in Tiles)
 			{
 				foreach (var direction in DIRECTIONS)
@@ -75,9 +79,13 @@ namespace BonsaiWorldSim
 					}
 				}
 			}
+		}
 
-			newTile.Push(Random.Next(360));
-
+		/// <summary>
+		///     Recursively calls Pull() on every tile based on their connections.
+		/// </summary>
+		void PullTiles()
+		{
 			var keepTrying = true;
 			while (keepTrying)
 			{
@@ -100,13 +108,18 @@ namespace BonsaiWorldSim
 					}
 				}
 			}
+		}
 
+		/// <summary>
+		///     Calls Move() on every tile, then merges overlapping tiles.
+		/// </summary>
+		void MoveTiles()
+		{
 			foreach (var tile in Tiles)
 			{
 				tile.Move();
 			}
 
-			// process overlapping tiles
 			foreach (var tile in Tiles.ToArray())
 			{
 				var tilesAtPosition = GetTilesAtPosition(tile.Position);
@@ -129,6 +142,24 @@ namespace BonsaiWorldSim
 					}
 				}
 			}
+		}
+
+		/// <summary>
+		///     Creates a new tile at (0,0) and pushes outward.
+		/// </summary>
+		public void Expand()
+		{
+			// create new tile
+			var newTile = new Tile(this);
+			Tiles.Add(newTile);
+
+			// make random connections
+			MakeRandomConnections();
+
+			// move tiles
+			newTile.Push(Random.Next(360));
+			PullTiles();
+			MoveTiles();
 		}
 	}
 }
