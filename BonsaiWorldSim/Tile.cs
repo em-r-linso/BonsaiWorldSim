@@ -1,7 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
-using System.Windows.Media;
 
 namespace BonsaiWorldSim
 {
@@ -19,7 +18,7 @@ namespace BonsaiWorldSim
 		public bool       DidPull          { get; set; }
 		public Vector2    Position         { get; set; }
 		public List<Tile> Connections      { get; set; }
-		public int Altitude { get; set; }
+		public int        Altitude         { get; set; }
 
 		Simulation Simulation { get; }
 		Vector2    MoveIntent { get; set; }
@@ -89,17 +88,16 @@ namespace BonsaiWorldSim
 
 		public void Move()
 		{
-			if (AssignedMovement)
+			if (AssignedMovement && ((Position + MoveIntent) != Vector2.Zero))
 			{
 				Position += MoveIntent;
-				DisconnectFromDistantTiles();
 			}
 
 			AssignedMovement = false;
 			DidPull          = false;
 		}
 
-		void DisconnectFromDistantTiles()
+		public void DisconnectFromDistantTiles()
 		{
 			foreach (var connection in Connections
 			                          .Where(connection => Vector2.Distance(Position, connection.Position) > 1.2f)

@@ -111,13 +111,18 @@ namespace BonsaiWorldSim
 		}
 
 		/// <summary>
-		///     Calls Move() on every tile, then merges overlapping tiles.
+		///     Moves all tiles, disconnects invalid connections, then processes overlapping tiles.
 		/// </summary>
 		void MoveTiles()
 		{
 			foreach (var tile in Tiles)
 			{
 				tile.Move();
+			}
+
+			foreach (var tile in Tiles)
+			{
+				tile.DisconnectFromDistantTiles();
 			}
 
 			foreach (var tile in Tiles.ToArray())
