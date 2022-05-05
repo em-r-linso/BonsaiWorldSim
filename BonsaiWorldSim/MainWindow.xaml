@@ -68,9 +68,20 @@
 				</Border>
 				<Border Grid.Row = "1"
 						Grid.Column = "1">
-					<Button Click = "ButtonBase_OnClick">
+					<Button Click = "Expand_OnClick">
 						<AccessText>_Expand</AccessText>
 					</Button>
+				</Border>
+
+				<!-- draw connections -->
+				<Border Grid.Row = "2"
+						Grid.Column = "0">
+					<TextBlock HorizontalAlignment = "Right">Draw Connections</TextBlock>
+				</Border>
+				<Border Grid.Row = "2"
+						Grid.Column = "1">
+					<CheckBox Checked = "DrawConnections_OnClick"
+							  Unchecked = "DrawConnections_OnClick" />
 				</Border>
 			</Grid>
 		</ScrollViewer>

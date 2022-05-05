@@ -1,10 +1,8 @@
 ﻿using System.Collections.Generic;
-using System.Drawing;
 using System.Numerics;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Shapes;
-using Color = System.Windows.Media.Color;
 
 namespace BonsaiWorldSim
 {
@@ -16,10 +14,11 @@ namespace BonsaiWorldSim
 		const float HEX_WIDTH               = HEX_SIZE * HEX_WIDTH_RATIO;
 		const float HEX_UPPER_CORNER_HEIGHT = 0.25f;
 		const float HEX_LOWER_CORNER_HEIGHT = 0.75f;
-		const float MIN_ALTITUDE            = 0;
 		const float MAX_ALTITUDE            = 10;
 
 		public HexMap(Canvas canvas) => Canvas = canvas;
+
+		public bool DoDrawConnections { get; set; }
 
 		Canvas Canvas { get; }
 
@@ -54,11 +53,7 @@ namespace BonsaiWorldSim
 
 		public void DrawHexes(List<Tile> tiles)
 		{
-			if (Canvas == null)
-			{
-				throw new("Canvas not found");
-			}
-
+			// TODO: optimize by moving hexes instead of redrawing them
 			Canvas.Children.Clear();
 
 			AddHex(Vector2.Zero, null, Brushes.Fuchsia);
@@ -70,20 +65,24 @@ namespace BonsaiWorldSim
 				AddHex(tile.Position, color, null);
 			}
 
-			foreach (var tile in tiles)
+			if (DoDrawConnections)
 			{
-				foreach (var connection in tile.Connections)
+				foreach (var tile in tiles)
 				{
-					Canvas.Children.Add(
-						new Line
-						{
-							Stroke = Brushes.Red,
-							X1     = (tile.Position.X       * HEX_WIDTH_RATIO         * HEX_SIZE) + (HEX_WIDTH  / 2f),
-							Y1     = (tile.Position.Y       * HEX_LOWER_CORNER_HEIGHT * HEX_SIZE) + (HEX_HEIGHT / 2f),
-							X2     = (connection.Position.X * HEX_WIDTH_RATIO         * HEX_SIZE) + (HEX_WIDTH  / 2f),
-							Y2     = (connection.Position.Y * HEX_LOWER_CORNER_HEIGHT * HEX_SIZE) + (HEX_HEIGHT / 2f)
-						}
-					);
+					foreach (var connection in tile.Connections)
+					{
+						Canvas.Children.Add(
+							new Line
+							{
+								Stroke = Brushes.Red,
+								X1     = (tile.Position.X * HEX_WIDTH_RATIO * HEX_SIZE) + (HEX_WIDTH / 2f),
+								Y1     = (tile.Position.Y * HEX_LOWER_CORNER_HEIGHT * HEX_SIZE) + (HEX_HEIGHT / 2f),
+								X2     = (connection.Position.X * HEX_WIDTH_RATIO * HEX_SIZE) + (HEX_WIDTH / 2f),
+								Y2 = (connection.Position.Y * HEX_LOWER_CORNER_HEIGHT * HEX_SIZE)
+								   + (HEX_HEIGHT            / 2f)
+							}
+						);
+					}
 				}
 			}
 		}

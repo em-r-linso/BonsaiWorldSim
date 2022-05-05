@@ -1,4 +1,5 @@
 ﻿using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
 
 namespace BonsaiWorldSim
@@ -18,17 +19,6 @@ namespace BonsaiWorldSim
 
 			HexMap = new(Canvas);
 			HexMap.DrawHexes(Simulation.Tiles);
-		}
-
-		static int LastUsedId { get; set; }
-
-		public static string NextId
-		{
-			get
-			{
-				LastUsedId++;
-				return $"{LastUsedId:000000}";
-			}
 		}
 
 		bool       IsDragged  { get; set; }
@@ -72,7 +62,7 @@ namespace BonsaiWorldSim
 			}
 		}
 
-		void ButtonBase_OnClick(object sender, RoutedEventArgs e)
+		void Expand_OnClick(object sender, RoutedEventArgs e)
 		{
 			for (var i = 0; i < EXPANSIONS_PER_BUTTON_PRESS; i++)
 			{
@@ -83,5 +73,17 @@ namespace BonsaiWorldSim
 		}
 
 		public static void Popup(string message) { MessageBox.Show(message); }
+
+		void DrawConnections_OnClick(object sender, RoutedEventArgs e)
+		{
+			if (sender is not CheckBox checkBox)
+			{
+				return;
+			}
+
+			HexMap.DoDrawConnections = checkBox.IsChecked ?? false;
+
+			HexMap.DrawHexes(Simulation.Tiles);
+		}
 	}
 }
